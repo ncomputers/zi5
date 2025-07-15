@@ -118,10 +118,10 @@ async def import_settings(request: Request):
 
 @router.post('/reset')
 async def reset_endpoint():
-    reset_counts(trackers_map)
+    reset_counts(trackers_map, redis)
     return {'reset': True}
 
 @router.post('/reset_nohelmet')
 async def reset_nohelmet_endpoint():
-    reset_nohelmet(redis)
+    reset_nohelmet(redis, trackers_map)
     return {'reset': True}

@@ -11,6 +11,7 @@ import redis
 from loguru import logger
 
 from .config import load_config, save_config, COUNT_GROUPS
+from .stats import broadcast_stats
 from modules.person_tracker import PersonTracker
 
 lock = threading.Lock()
@@ -98,19 +99,26 @@ def stop_tracker(cam_id: int, trackers: Dict[int, PersonTracker]) -> None:
         tr.running = False
 
 
-def reset_counts(trackers: Dict[int, PersonTracker]) -> None:
+def reset_counts(trackers: Dict[int, PersonTracker], r: redis.Redis | None = None) -> None:
+    """Reset in/out counters for all trackers and broadcast the update."""
     for tr in trackers.values():
         tr.in_count = 0
         tr.out_count = 0
         tr.tracks.clear()
         tr.prev_date = date.today()
         tr.redis.mset({tr.key_in: 0, tr.key_out: 0, tr.key_date: tr.prev_date.isoformat()})
+    if r is None and trackers:
+        r = next(iter(trackers.values())).redis
+    if r:
+        broadcast_stats(trackers, r)
     logger.info("Counts reset")
 
 
-def reset_nohelmet(r: redis.Redis) -> None:
-    """Reset the stored no-helmet counter in Redis."""
+def reset_nohelmet(r: redis.Redis, trackers: Dict[int, PersonTracker] | None = None) -> None:
+    """Reset the stored no-helmet counter in Redis and broadcast the update."""
     r.set("no_helmet_count", 0)
+    if trackers:
+        broadcast_stats(trackers, r)
     logger.info("No-helmet counter reset")
 
 
