@@ -16,6 +16,7 @@
         .stats-container{display:flex;flex-wrap:wrap;justify-content:center;}
         .stat-tile{flex:1 1 45%;margin:5px;min-width:140px;}
         .stat-full{flex:1 1 100%;}
+
         .camera-grid{display:flex;flex-wrap:wrap;justify-content:center;}
         .camera-tile{flex:1 1 45%;padding:0 0.5rem;box-sizing:border-box;min-width:200px;}
         .camera-tile .card{margin-bottom:1rem;}
@@ -44,18 +45,19 @@
     {% if 'person' in cfg.track_objects %}
     <div class="dashboard-row mb-3">
         <div class="metric-tile">
+
             <div class="stat-box bg-primary">
                 <h4>People Entered</h4>
                 <div class="display-6" id="in_count">{{group_counts.get('person', {}).get('in', 0)}}</div>
             </div>
         </div>
-        <div class="metric-tile">
+
             <div class="stat-box bg-danger">
                 <h4>People Exited</h4>
                 <div class="display-6" id="out_count">{{group_counts.get('person', {}).get('out', 0)}}</div>
             </div>
         </div>
-        <div class="metric-tile">
+<
             <div id="box-current" class="stat-box bg-success">
                 <h4>People Inside</h4>
                 <div class="display-6" id="current_count">{{group_counts.get('person', {}).get('current', 0)}}</div>
@@ -65,14 +67,12 @@
     </div>
     {% endif %}
     {% if 'vehicle' in cfg.track_objects %}
-    <div class="dashboard-row mb-3">
-        <div class="metric-tile">
             <div class="stat-box bg-primary">
                 <h4>Vehicles Entered</h4>
                 <div class="display-6" id="vehicle_in">{{group_counts.get('vehicle', {}).get('in',0)}}</div>
             </div>
         </div>
-        <div class="metric-tile">
+
             <div class="stat-box bg-danger">
                 <h4>Vehicles Exited</h4>
                 <div class="display-6" id="vehicle_out">{{group_counts.get('vehicle', {}).get('out',0)}}</div>
@@ -86,7 +86,7 @@
         </div>
     </div>
     {% endif %}
-    <div class="dashboard-row mb-4">
+
         {% set colors = {
             'no_helmet':'bg-danger',
             'no_safety_shoes':'bg-primary',
@@ -98,7 +98,7 @@
         } %}
         {% for item in cfg.alert_anomalies %}
         {% if item.startswith('no_') %}
-        <div class="metric-tile">
+
             <div class="stat-box {{ colors.get(item,'bg-warning') }}" id="box-{{item}}" style="cursor:pointer">
                 <h4>{{item.replace('no_','No ').replace('_',' ')}}</h4>
                 <div class="display-6" id="{{item}}_count">{{anomaly_counts[item]}}</div>

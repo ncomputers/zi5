@@ -100,8 +100,11 @@ async def ws_stats(ws: WebSocket):
                     data = fields.get(b'data') or fields.get('data')
                     if data:
                         await ws.send_text(data.decode() if isinstance(data, bytes) else data)
+
     except WebSocketDisconnect:
         pass
+    finally:
+        pubsub.close()
 
 @router.get('/sse/stats')
 async def sse_stats():

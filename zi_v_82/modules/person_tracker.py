@@ -11,6 +11,7 @@ from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 import math
 import numpy as np
+
 import redis
 from pathlib import Path
 from .utils import send_email, lock, SNAP_DIR
@@ -347,6 +348,7 @@ class PersonTracker:
                     bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2] - xyxy[0]), int(xyxy[3] - xyxy[1])]
                     dets.append([bbox, conf, label])
             matrix = np.array([d[0] for d in dets], dtype=float)
+
             try:
                 if matrix.size > 0 and not np.isfinite(matrix).all():
                     raise ValueError("matrix contains invalid numeric entries")
