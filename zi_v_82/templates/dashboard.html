@@ -14,6 +14,7 @@
         .stats-container{display:flex;flex-wrap:wrap;justify-content:center;}
         .stat-tile{flex:1 1 45%;margin:5px;min-width:140px;}
         .stat-full{flex:1 1 100%;}
+
         .camera-grid{display:flex;flex-wrap:wrap;justify-content:center;}
         .camera-tile{flex:1 1 45%;padding:0 0.5rem;box-sizing:border-box;min-width:200px;}
         .camera-tile .card{margin-bottom:1rem;}
@@ -41,6 +42,7 @@
     {% if 'person' in cfg.track_objects %}
     <div class="stats-container mb-3">
         <div class="stat-tile">
+
             <div class="stat-box bg-primary">
                 <h4>People Entered</h4>
                 <div class="display-6" id="in_count">{{group_counts.get('person', {}).get('in', 0)}}</div>
