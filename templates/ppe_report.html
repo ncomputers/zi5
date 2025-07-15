@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PPE Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+</head>
+<body class="pt-5">
+{% include 'partials/header.html' %}
+<div class="container mt-4">
+    <h1 class="mb-4">PPE Report</h1>
+    <form id="rangeForm" class="row g-2 mb-3">
+        <div class="col-auto"><input type="text" id="range" class="form-control" placeholder="Select range"></div>
+        <div class="col-auto">
+            <select id="quick" class="form-select">
+                <option value="">Custom</option>
+                <option value="today">Today</option>
+                <option value="week">Last 7 days</option>
+                <option value="month">This Month</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <select id="status" class="form-select" multiple size="4">
+                {% for st in status_options %}
+                <option value="{{st}}">{{st.replace('_',' ').title()}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <input type="number" step="0.01" id="minConf" class="form-control" placeholder="Min conf" value="{{cfg.helmet_conf_thresh}}">
+        </div>
+        <div class="col-auto">
+            <select id="color" class="form-select">
+                <option value="">All Colors</option>
+                <option value="red">Red</option>
+                <option value="yellow">Yellow</option>
+                <option value="green">Green</option>
+                <option value="blue">Blue</option>
+                <option value="purple">Purple</option>
+                <option value="white">White</option>
+                <option value="black">Black</option>
+            </select>
+        </div>
+        <div class="col d-flex justify-content-end align-items-start gap-2">
+            <button type="submit" class="btn btn-primary">Load</button>
+            <a id="exportLink" class="btn btn-success" href="#" download>Export</a>
+            <input type="email" id="mailTo" class="form-control" placeholder="Email">
+            <button type="button" id="sendBtn" class="btn btn-secondary">Send Email</button>
+            <a href="/" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+    <div id="loading" style="display:none">Loading...</div>
+    <table class="table table-striped" id="logTable">
+        <thead><tr><th>Time</th><th>Camera</th><th>Track</th><th>Status</th><th>Conf</th><th>Color</th><th>Image</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+async function loadData(){
+    document.getElementById('loading').style.display='block';
+    const range=document.getElementById('range').value.split(' to ');
+    const s=range[0];
+    const e=range[1]||range[0];
+    const sel=document.getElementById('status');
+    const st=[...sel.selectedOptions].map(o=>o.value).join(',');
+    const mc=document.getElementById('minConf').value;
+    const col=document.getElementById('color').value;
+    const r=await fetch(`/ppe_report_data?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}&status=${encodeURIComponent(st)}&min_conf=${encodeURIComponent(mc)}&color=${encodeURIComponent(col)}`);
+    const d=await r.json();
+    const body=document.querySelector('#logTable tbody');
+    body.innerHTML='';
+    if(d.rows.length===0){
+        body.innerHTML='<tr><td colspan="7" class="text-center">No data found for the selected filters</td></tr>';
+    }else{
+        d.rows.forEach(row=>{
+            const tr=document.createElement('tr');
+            const img= row.image ? `<a href="${row.image}" download><img src="${row.image}" width="80"></a>` : '';
+            tr.innerHTML=`<td>${row.time}</td><td>${row.cam_id}</td><td>${row.track_id}</td><td>${row.status}</td><td>${row.conf.toFixed(2)}</td><td>${row.color||''}</td><td>${img}</td>`;
+            body.appendChild(tr);
+        });
+    }
+    const link=document.getElementById('exportLink');
+    link.href=`/ppe_report/export?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}&status=${encodeURIComponent(st)}&min_conf=${encodeURIComponent(mc)}&color=${encodeURIComponent(col)}`;
+    if($.fn.DataTable.isDataTable('#logTable')){
+        $('#logTable').DataTable().destroy();
+    }
+    if(d.rows.length>0){
+        $('#logTable').DataTable();
+    }
+    document.getElementById('loading').style.display='none';
+}
+document.getElementById('rangeForm').addEventListener('submit',e=>{e.preventDefault();loadData();});
+document.getElementById('sendBtn').addEventListener('click',async()=>{
+  const range=document.getElementById('range').value.split(' to ');
+  const s=range[0];
+  const e=range[1]||range[0];
+  const sel=document.getElementById('status');
+  const st=[...sel.selectedOptions].map(o=>o.value).join(',');
+  const mc=document.getElementById('minConf').value;
+  const col=document.getElementById('color').value;
+  const email=document.getElementById('mailTo').value;
+  const resp=await fetch(`/ppe_report/email?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}&status=${encodeURIComponent(st)}&min_conf=${encodeURIComponent(mc)}&color=${encodeURIComponent(col)}&to=${encodeURIComponent(email)}`,{method:'POST'});
+  if(resp.ok){alert('Email sent');}else{alert('Email failed');}
+});
+
+flatpickr("#range",{enableTime:true,dateFormat:"Y-m-d H:i",mode:"range"});
+document.getElementById('quick').addEventListener('change',e=>{
+  const fp=document.getElementById('range')._flatpickr;
+  const now=new Date();
+  if(e.target.value==='today'){
+      fp.setDate([now,now]);
+  }else if(e.target.value==='week'){
+      const past=new Date(now.getTime()-7*24*3600*1000);
+      fp.setDate([past,now]);
+  }else if(e.target.value==='month'){
+      const first=new Date(now.getFullYear(),now.getMonth(),1);
+      fp.setDate([first,now]);
+  }
+});
+</script>
+{% include 'partials/footer.html' %}
+</body>
+</html>

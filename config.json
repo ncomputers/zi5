@@ -1,0 +1,65 @@
+{
+  "stream_url": "http://localhost/zm/cgi-bin/nph-zms?mode=jpeg&monitor=20",
+  "person_model": "yolov8n.pt",
+  "ppe_model": "mymodalv5.pt",
+  "device": "auto",
+  "fps": 15,
+  "skip_frames": 2,
+  "line_ratio": 0.5,
+  "v_thresh": 2,
+  "debounce": 0.5,
+  "retry_interval": 5,
+  "conf_thresh": 0.3,
+  "helmet_conf_thresh": 0.5,
+  "detect_helmet_color": false,
+  "show_lines": true,
+  "show_ids": true,
+  "max_capacity": 500,
+  "warn_threshold": 80,
+  "track_ppe": [
+    "helmet"
+  ],
+  "alert_anomalies": [
+    "no_helmet"
+  ],
+  "redis_url": "redis://localhost:6379/0",
+  "default_workers": -1,
+  "port": 5002,
+  "email": {
+    "smtp_host": "",
+    "smtp_port": 587,
+    "smtp_user": "",
+    "smtp_pass": "",
+    "use_tls": true,
+    "from_addr": ""
+  },
+  "secret_key": "change-me",
+  "track_objects": [
+    "person"
+  ],
+  "alert_rules": [],
+  "track_misc": true,
+  "preview_anomalies": [],
+  "email_enabled": true,
+  "show_track_lines": false,
+  "duplicate_filter_enabled": false,
+  "duplicate_filter_threshold": 2,
+  "duplicate_bypass_seconds": 2,
+  "ppe_log_limit": 1000,
+  "users": [
+    {
+      "username": "admin",
+      "password": "$pbkdf2-sha256$29000$ACCkVAphjHHO.b/3HiOk9A$y6x.QGbw.Op9fS3fMDuLaT7jH5LyTaGO/gB7N/XFhSE",
+      "role": "admin"
+    },
+    {
+      "username": "viewer",
+      "password": "$pbkdf2-sha256$29000$0lrr3bv33ptTihHCOIcQQg$0D5Meobfy0usNdCgJE6Mu6ucHWnWfPNR.XYuH7Sm7Ao",
+      "role": "viewer"
+    }
+  ],
+  "settings_password": "000",
+  "max_retry": 5,
+  "logo1_path": "static/logo1.png",
+  "logo2_path": "static/logo2.png"
+}

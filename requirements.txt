@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+redis
+opencv-python-headless
+torch
+ultralytics
+deep-sort-realtime
+loguru
+jinja2
+openpyxl
+websockets
+python-multipart
+imagehash
+Pillow
+passlib
+pytest
+fakeredis

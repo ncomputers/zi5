@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Z-Eye System Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body{padding-top:70px;background:#f7f7f7;}
+        .stat-box{border-radius:.5rem;color:#fff;padding:0.8rem;margin-bottom:0.8rem;min-height:110px;display:flex;flex-direction:column;justify-content:center;}
+        .stat-box h4{font-size:1.1rem;margin-bottom:.5rem;}
+        .stat-box .display-6{font-size:2rem;}
+        .feed-img{max-height:120px;object-fit:cover;}
+        .dark-mode{background:#222;color:#fff;}
+        .dark-mode .stat-box{color:#fff;}
+        .nav-btn{min-width:110px;margin-left:.5rem}
+        header img{height:40px;}
+        footer{background:#f0f0f0;font-size:.9rem;}
+        .dark-mode footer{background:#111;color:#fff;}
+    </style>
+</head>
+<body>
+{% include 'partials/header.html' %}
+<div class="container-fluid text-center mt-3">
+    {% if 'person' in cfg.track_objects %}
+    <div class="row g-3 justify-content-center mb-3">
+        <div class="col-md-3">
+            <div id="box-current" class="stat-box bg-success">
+                <h4>People Inside</h4>
+                <div class="display-6" id="current_count">{{group_counts.get('person', {}).get('current', 0)}}</div>
+                <div id="status_msg" class="fw-bold">{{status}}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box bg-primary">
+                <h4>People Entered</h4>
+                <div class="display-6" id="in_count">{{group_counts.get('person', {}).get('in', 0)}}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box bg-danger">
+                <h4>People Exited</h4>
+                <div class="display-6" id="out_count">{{group_counts.get('person', {}).get('out', 0)}}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if 'vehicle' in cfg.track_objects %}
+    <div class="row g-3 justify-content-center mb-3">
+        <div class="col-md-3">
+            <div class="stat-box bg-success">
+                <h4>Vehicles Inside</h4>
+                <div class="display-4" id="vehicle_current">{{group_counts.get('vehicle', {}).get('current',0)}}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box bg-primary">
+                <h4>Vehicles Entered</h4>
+                <div class="display-6" id="vehicle_in">{{group_counts.get('vehicle', {}).get('in',0)}}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box bg-danger">
+                <h4>Vehicles Exited</h4>
+                <div class="display-6" id="vehicle_out">{{group_counts.get('vehicle', {}).get('out',0)}}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="row g-3 justify-content-center mb-4">
+        {% set colors = {
+            'no_helmet':'bg-danger',
+            'no_safety_shoes':'bg-primary',
+            'no_safety_glasses':'bg-info',
+            'no_protective_gloves':'bg-warning',
+            'no_dust_mask':'bg-secondary',
+            'no_face_shield':'bg-dark',
+            'no_vest_jacket':'bg-success',
+        } %}
+        {% for item in cfg.alert_anomalies %}
+        {% if item.startswith('no_') %}
+        <div class="col-md-3">
+            <div class="stat-box {{ colors.get(item,'bg-warning') }}" id="box-{{item}}" style="cursor:pointer">
+                <h4>{{item.replace('no_','No ').replace('_',' ')}}</h4>
+                <div class="display-6" id="{{item}}_count">{{anomaly_counts[item]}}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="row" id="feeds">
+            {% for cam in cameras %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                      <div class="card-header">
+                        {{cam.name}}
+                      </div>
+                      <img src="/video_feed/{{cam.id}}" class="card-img-top feed-img" alt="feed">
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <canvas id="occChart" class="w-100" style="height:240px"></canvas>
+            <canvas id="liveChart" class="w-100 mt-4" style="height:240px"></canvas>
+        </div>
+    </div>
+    {% if 'no_helmet' in cfg.preview_anomalies %}
+    <div class="row mb-4">
+        <h5>Latest No Helmet</h5>
+        <div id="previewImgs" class="d-flex flex-wrap"></div>
+    </div>
+    {% endif %}
+</div>
+<script>
+const evt=new EventSource(`/sse/stats`);
+let chart;
+let liveChart;
+function initChart(maxCap){
+  const ctx=document.getElementById('occChart').getContext('2d');
+  chart=new Chart(ctx,{type:'bar',data:{labels:['Inside','Remaining'],datasets:[{label:'People',data:[0,maxCap],backgroundColor:['#0d6efd','#adb5bd']} ]},options:{indexAxis:'y',scales:{x:{beginAtZero:true,max:maxCap}}}});
+}
+function initLive(){
+  const ctx=document.getElementById('liveChart').getContext('2d');
+  liveChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:[],datasets:[
+      {label:'In',yAxisID:'y1',data:[],borderColor:'green',tension:0.2},
+      {label:'Out',yAxisID:'y1',data:[],borderColor:'red',tension:0.2},
+      {label:'Currently Inside',yAxisID:'y2',data:[],borderColor:'blue',tension:0.2}
+    ]},
+    options:{scales:{y1:{type:'linear',position:'left'},y2:{type:'linear',position:'right',grid:{drawOnChartArea:false}}}}
+  });
+}
+let maxCap={{max_capacity}};
+initChart(maxCap);
+initLive();
+const body=document.body;
+document.getElementById("darkToggle").addEventListener("click",()=>{
+  const d=body.classList.toggle("dark-mode");
+  localStorage.setItem("dark-mode",d);
+});
+if(localStorage.getItem("dark-mode")==="true"){
+  body.classList.add("dark-mode");
+}
+
+evt.onmessage=e=>{
+  const d=JSON.parse(e.data);
+  document.getElementById('in_count').textContent=d.in_count;
+  document.getElementById('out_count').textContent=d.out_count;
+  document.getElementById('current_count').textContent=d.current;
+  if(d.group_counts && d.group_counts.vehicle){
+    const gv=d.group_counts.vehicle;
+    const vin=document.getElementById('vehicle_in');
+    if(vin) vin.textContent=gv.in;
+    const vout=document.getElementById('vehicle_out');
+    if(vout) vout.textContent=gv.out;
+    const vc=document.getElementById('vehicle_current');
+    if(vc) vc.textContent=gv.current;
+  }
+  if(d.anomaly_counts){
+    for(const [k,v] of Object.entries(d.anomaly_counts)){
+      const el=document.getElementById(`${k}_count`);
+      if(el) el.textContent=v;
+    }
+  }
+  const box=document.getElementById('box-current');
+  const msg=document.getElementById('status_msg');
+  box.classList.remove('bg-success','bg-warning','bg-danger');
+  if(d.status==='green'){box.classList.add('bg-success');msg.textContent='Safe';}
+  else if(d.status==='yellow'){box.classList.add('bg-warning');msg.textContent='Warning';}
+  else{box.classList.add('bg-danger');msg.textContent='Full';}
+  chart.options.scales.x.max=d.max_capacity;
+  chart.data.datasets[0].data=[d.current,d.max_capacity-d.current];
+  chart.update();
+
+  const now=new Date().toLocaleTimeString();
+  liveChart.data.labels.push(now);
+  liveChart.data.datasets[0].data.push(d.in_count);
+  liveChart.data.datasets[1].data.push(d.out_count);
+  liveChart.data.datasets[2].data.push(d.current);
+  if(liveChart.data.labels.length>30){
+    liveChart.data.labels.shift();
+    liveChart.data.datasets.forEach(ds=>ds.data.shift());
+  }
+  liveChart.update();
+};
+document.querySelectorAll('[id^="box-no_"]').forEach(box=>{
+  box.addEventListener('click',()=>{location.href=`/ppe_report?status=${box.id.replace('box-','')}`;});
+});
+async function loadPreview(){
+  const box=document.getElementById('previewImgs');
+  if(!box) return;
+  const r=await fetch('/latest_images?status=no_helmet');
+  const d=await r.json();
+  box.innerHTML='';
+  d.images.forEach(u=>{const i=document.createElement('img');i.src=u;i.width=80;i.className='me-2 mb-2';box.appendChild(i);});
+}
+setInterval(loadPreview,5000);loadPreview();
+</script>
+{% include 'partials/footer.html' %}
+</body>
+</html>

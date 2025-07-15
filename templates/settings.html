@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+    .dark-mode{background:#222;color:#fff;}
+    </style>
+</head>
+<body class="pt-5">
+{% include 'partials/header.html' %}
+<div class="container mt-4">
+    <h1 class="mb-4">Settings</h1>
+    <div id="msg"></div>
+    <form id="cfgForm">
+        <div class="mb-3">
+            <label class="form-label">Settings Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="accordion" id="cfgAcc">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="sysHead">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#sys" aria-expanded="true">System Configuration</button>
+                </h2>
+                <div id="sys" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Max Capacity</label>
+                                <input type="number" name="max_capacity" class="form-control" value="{{cfg.max_capacity}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Warn Threshold (%)</label>
+                                <input type="number" name="warn_threshold" class="form-control" value="{{cfg.warn_threshold}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">FPS</label>
+                                <input type="number" name="fps" class="form-control" value="{{cfg.fps}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Skip Frames</label>
+                                <input type="number" name="skip_frames" class="form-control" value="{{cfg.skip_frames}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Line Ratio</label>
+                                <input type="number" step="0.1" name="line_ratio" class="form-control" value="{{cfg.line_ratio}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Velocity Threshold</label>
+                                <input type="number" name="v_thresh" class="form-control" value="{{cfg.v_thresh}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Debounce (s)</label>
+                                <input type="number" step="0.1" name="debounce" class="form-control" value="{{cfg.debounce}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Retry Interval (s)</label>
+                                <input type="number" name="retry_interval" class="form-control" value="{{cfg.retry_interval}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Max Retry Count</label>
+                                <input type="number" name="max_retry" class="form-control" value="{{cfg.max_retry}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="detHead">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#det" aria-expanded="false">Detection Settings</button>
+                </h2>
+                <div id="det" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Detection Threshold</label>
+                                <input type="number" step="0.01" name="conf_thresh" class="form-control" value="{{cfg.conf_thresh}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Helmet Threshold</label>
+                                <input type="number" step="0.01" name="helmet_conf_thresh" class="form-control" value="{{cfg.helmet_conf_thresh}}">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" name="detect_helmet_color" id="detectColor" {% if cfg.detect_helmet_color %}checked{% endif %}>
+                                    <label class="form-check-label" for="detectColor">Detect Helmet Color</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" name="track_misc" id="trackMisc" {% if cfg.track_misc %}checked{% endif %}>
+                                    <label class="form-check-label" for="trackMisc">Log Misc Items</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Objects to Count</label>
+                                <div class="row row-cols-2 g-2">
+                                    {% for item in count_options %}
+                                    <div class="col form-check">
+                                        <input class="form-check-input" type="checkbox" name="track_objects" value="{{item}}" id="o{{loop.index}}" {% if item in cfg.track_objects %}checked{% endif %}>
+                                        <label class="form-check-label" for="o{{loop.index}}">{{item.title()}}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Track PPE Items</label>
+                                <div class="row row-cols-2 g-2">
+                                    {% for item in ppe_items %}
+                                    <div class="col form-check">
+                                        <input class="form-check-input" type="checkbox" name="track_ppe" value="{{item}}" id="t{{loop.index}}" {% if item in cfg.track_ppe %}checked{% endif %}>
+                                        <label class="form-check-label" for="t{{loop.index}}">{{item}}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="alertHead">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#alert" aria-expanded="false">Alert Settings</button>
+                </h2>
+                <div id="alert" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <div class="row g-3">
+                            <div class="col-md-6 form-check">
+                                <input class="form-check-input" type="checkbox" name="email_enabled" id="emailEnabled" {% if cfg.email_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="emailEnabled">Enable Email Alerts</label>
+                            </div>
+                            <div class="col-md-6 form-check">
+                                <input class="form-check-input" type="checkbox" name="duplicate_filter_enabled" id="dupFilter" {% if cfg.duplicate_filter_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="dupFilter">Enable Duplicate Filter</label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Duplicate Threshold (%)</label>
+                                <input type="number" step="0.001" min="0.001" name="duplicate_filter_threshold" class="form-control" value="{{cfg.duplicate_filter_threshold}}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Bypass Window (s)</label>
+                                <input type="number" step="1" min="0" name="duplicate_bypass_seconds" class="form-control" value="{{cfg.duplicate_bypass_seconds}}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Anomaly Alerts</label>
+                                <div class="row row-cols-2 g-2">
+                                    {% for item in anomaly_items %}
+                                    <div class="col form-check">
+                                        <input class="form-check-input" type="checkbox" name="alert_anomalies" value="{{item}}" id="a{{loop.index}}" {% if item in cfg.alert_anomalies %}checked{% endif %}>
+                                        <label class="form-check-label" for="a{{loop.index}}">{{item.replace('no_','No ').replace('_',' ')}}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Show Preview Boxes</label>
+                                <div class="row row-cols-2 g-2">
+                                    {% for item in anomaly_items %}
+                                    <div class="col form-check">
+                                        <input class="form-check-input" type="checkbox" name="preview_anomalies" value="{{item}}" id="p{{loop.index}}" {% if item in cfg.preview_anomalies %}checked{% endif %}>
+                                        <label class="form-check-label" for="p{{loop.index}}">{{item.replace('no_','No ').replace('_',' ')}}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="dispHead">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#disp" aria-expanded="false">Display Preferences</button>
+                </h2>
+                <div id="disp" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_lines" id="showLines" {% if cfg.show_lines %}checked{% endif %}>
+                            <label class="form-check-label" for="showLines">Show Lines</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_ids" id="showIds" {% if cfg.show_ids %}checked{% endif %}>
+                            <label class="form-check-label" for="showIds">Show IDs</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_track_lines" id="showTrackLines" {% if cfg.show_track_lines %}checked{% endif %}>
+                            <label class="form-check-label" for="showTrackLines">Show Red Lines</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" id="resetBtn" class="btn btn-warning">Reset Counts</button>
+            <button type="button" id="resetNH" class="btn btn-warning">Reset No-Helmet</button>
+            <button type="button" id="exportCfg" class="btn btn-info">Export</button>
+            <label class="btn btn-info mb-0">Import <input type="file" id="importFile" hidden></label>
+            <a href="/" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+</div>
+<script>
+if(localStorage.getItem('dark-mode')==='true'){document.body.classList.add('dark-mode');}
+
+document.getElementById('cfgForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const form=new FormData(e.target);
+  const obj=Object.fromEntries(form.entries());
+  obj.track_ppe=form.getAll('track_ppe');
+  obj.alert_anomalies=form.getAll('alert_anomalies');
+  obj.preview_anomalies=form.getAll('preview_anomalies');
+  obj.track_objects=form.getAll('track_objects');
+  obj.detect_helmet_color=form.get('detect_helmet_color')==='on';
+  obj.track_misc=form.get('track_misc')==='on';
+  obj.show_lines=form.get('show_lines')==='on';
+  obj.show_ids=form.get('show_ids')==='on';
+  obj.show_track_lines=form.get('show_track_lines')==='on';
+  obj.email_enabled=form.get('email_enabled')==='on';
+  obj.duplicate_filter_enabled=form.get('duplicate_filter_enabled')==='on';
+  obj.duplicate_filter_threshold=parseFloat(form.get('duplicate_filter_threshold'));
+  obj.duplicate_bypass_seconds=parseFloat(form.get('duplicate_bypass_seconds'));
+  obj.max_retry=parseFloat(form.get('max_retry'));
+  obj.password=form.get('password');
+  for(const k of ['max_capacity','warn_threshold','fps','skip_frames','line_ratio','v_thresh','debounce','retry_interval','conf_thresh','helmet_conf_thresh','duplicate_filter_threshold','duplicate_bypass_seconds','max_retry']){if(k in obj) obj[k]=parseFloat(obj[k]);}
+  const r=await fetch('/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
+  const d=await r.json();
+  if(d.saved){document.getElementById('msg').innerHTML='<div class="alert alert-success">Saved</div>';} else {document.getElementById('msg').innerHTML='<div class="alert alert-danger">Error</div>';}
+});
+
+document.getElementById('resetBtn').addEventListener('click',async ()=>{
+  const r=await fetch('/reset',{method:'POST'});const d=await r.json();
+  document.getElementById('msg').innerHTML=d.reset?' <div class="alert alert-warning">Counts reset</div>':'<div class="alert alert-danger">Error</div>';
+});
+
+document.getElementById('resetNH').addEventListener('click',async()=>{
+  await fetch('/reset_nohelmet',{method:'POST'});
+  document.getElementById('msg').innerHTML='<div class="alert alert-warning">No-helmet counter reset</div>';
+});
+
+document.getElementById('exportCfg').addEventListener('click',()=>{window.location='/settings/export';});
+
+document.getElementById('importFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file) return;
+  try{const data=JSON.parse(await file.text());const r=await fetch('/settings/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();document.getElementById('msg').innerHTML=d.saved?'<div class="alert alert-success">Imported</div>':'<div class="alert alert-danger">Error</div>';}catch(err){document.getElementById('msg').innerHTML='<div class="alert alert-danger">Invalid file</div>';}
+});
+</script>
+{% include 'partials/footer.html' %}
+</body>
+</html>

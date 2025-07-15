@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reports</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+</head>
+<body class="pt-5">
+{% include 'partials/header.html' %}
+<div class="container mt-4">
+    <h1 class="mb-4">Report</h1>
+    <form id="rangeForm" class="row g-2 mb-4">
+        <div class="col-auto"><input type="text" id="range" class="form-control" placeholder="Select range"></div>
+        <div class="col-auto">
+            <select id="quick" class="form-select">
+                <option value="">Custom</option>
+                <option value="today">Today</option>
+                <option value="week">Last 7 days</option>
+                <option value="month">This Month</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <select id="type" class="form-select">
+                <option value="person">Person Report</option>
+                {% if vehicle_enabled %}<option value="vehicle">Vehicle Report</option>{% endif %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select id="view" class="form-select">
+                <option value="graph">Graph View</option>
+                <option value="table">Table View</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <select id="rows" class="form-select">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Load</button>
+        </div>
+        <div class="col-auto">
+            <a href="/" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+    <div id="graphBox" class="mx-auto" style="max-width:900px">
+        <canvas id="reportChart" height="300"></canvas>
+    </div>
+    <table class="table table-striped" id="tbl" style="display:none">
+        <thead><tr><th>Time</th><th>Camera</th><th>Track</th><th>Direction</th><th>Label</th><th>Image</th></tr></thead>
+        <tbody></tbody>
+    </table>
+    <a id="exportLink" class="btn btn-success mt-2" href="#" download>Export</a>
+</div>
+<script>
+const ctx=document.getElementById('reportChart').getContext('2d');
+const chart=new Chart(ctx,{
+    type:'line',
+    data:{labels:[],datasets:[
+        {label:'In',yAxisID:'y1',data:[],borderColor:'green',tension:0.2},
+        {label:'Out',yAxisID:'y1',data:[],borderColor:'red',tension:0.2},
+        {label:'Currently Inside',yAxisID:'y2',data:[],borderColor:'blue',tension:0.2}
+    ]},
+    options:{
+        scales:{
+            y1:{type:'linear',position:'left'},
+            y2:{type:'linear',position:'right',grid:{drawOnChartArea:false}}
+        }
+    }
+});
+
+document.getElementById('rangeForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const range=document.getElementById('range').value.split(' to ');
+    const s=range[0];
+    const eTime=range[1]||range[0];
+    const type=document.getElementById('type').value;
+    const view=document.getElementById('view').value;
+    const rows=document.getElementById('rows').value;
+    const url=`/report_data?start=${encodeURIComponent(s)}&end=${encodeURIComponent(eTime)}&type=${type}&view=${view}&rows=${rows}`;
+    const r=await fetch(url);
+    const d=await r.json();
+    document.getElementById('exportLink').href=`/report/export?start=${encodeURIComponent(s)}&end=${encodeURIComponent(eTime)}&type=${type}&view=${view}&rows=${rows}`;
+    if(view==='graph'){
+        document.getElementById('graphBox').style.display='block';
+        document.getElementById('tbl').style.display='none';
+        chart.data.labels=d.times;
+        chart.data.datasets[0].data=d.ins;
+        chart.data.datasets[1].data=d.outs;
+        chart.data.datasets[2].data=d.current;
+        chart.update();
+    }else{
+        document.getElementById('graphBox').style.display='none';
+        const body=document.querySelector('#tbl tbody');
+        body.innerHTML='';
+        d.rows.forEach(row=>{
+            const tr=document.createElement('tr');
+            const img=row.path?`<img src="${row.path}" width="80">`:'';
+            tr.innerHTML=`<td>${row.time}</td><td>${row.cam_id}</td><td>${row.track_id}</td><td>${row.direction||''}</td><td>${row.label||''}</td><td>${img}</td>`;
+            body.appendChild(tr);
+        });
+        document.getElementById('tbl').style.display='table';
+    }
+});
+flatpickr('#range',{enableTime:true,dateFormat:'Y-m-d H:i',mode:'range'});
+document.getElementById('quick').addEventListener('change',e=>{
+  const fp=document.getElementById('range')._flatpickr;
+  const now=new Date();
+  if(e.target.value==='today'){
+      fp.setDate([now,now]);
+  }else if(e.target.value==='week'){
+      const past=new Date(now.getTime()-7*24*3600*1000);
+      fp.setDate([past,now]);
+  }else if(e.target.value==='month'){
+      const first=new Date(now.getFullYear(),now.getMonth(),1);
+      fp.setDate([first,now]);
+  }
+});
+</script>
+{% include 'partials/footer.html' %}
+</body>
+</html>
