@@ -16,7 +16,7 @@ still available.
 - **Duplicate frame filter**: Skips nearly identical frames to reduce GPU/CPU load.
 - **Dashboard and reports**: Live counts, recent anomalies, and historical reports are available in the web interface.
 - **Per-camera resolution**: Choose 480p, 720p, 1080p, or original when adding a camera.
-- **Real-time updates via SSE**: Dashboard values refresh automatically without manual reload.
+- **Real-time updates via WebSocket**: Dashboard values refresh automatically without manual reload.
 - **Camera status**: Online/offline indicators appear in the Cameras page for quick troubleshooting.
 - **Secure logins**: User passwords are stored as PBKDF2 hashes and verified using passlib.
 - **Rotating log file**: `app.log` captures runtime logs with automatic rotation.
@@ -46,10 +46,7 @@ Launch the FastAPI application:
 ```bash
 python3 app.py
 ```
-Then open `http://localhost:5002` in your browser. Use the **Cameras** page to add streams (HTTP, RTSP or local webcams) and **Settings** to adjust options. Tests can be executed with `pytest`:
-```bash
-python3 -m pytest -q tests
-```
+Then open `http://localhost:5002` in your browser. Use the **Cameras** page to add streams (HTTP, RTSP or local webcams) and **Settings** to adjust options.
 
 ## Directory Structure
 - `app.py` – FastAPI entry point.
@@ -58,5 +55,4 @@ python3 -m pytest -q tests
 - `routers/` – API routes for dashboard, settings, reports, and cameras.
 - `templates/` – HTML templates rendered by FastAPI.
 - `public/` – Optional PHP pages.
-- `tests/` – Simple unit tests.
 

@@ -9,6 +9,7 @@ import torch
 from loguru import logger
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
+import math
 import redis
 from pathlib import Path
 from .utils import send_email, lock, SNAP_DIR
@@ -340,15 +341,15 @@ class PersonTracker:
                 raw = self.model_person.names[int(cls)] if isinstance(self.model_person.names, dict) else self.model_person.names[int(cls)]
                 label = self._clean_label(raw)
                 if label in self.classes and conf >= self.conf_thresh:
-                    dets.append([
-                        [int(xyxy[0]), int(xyxy[1]), int(xyxy[2] - xyxy[0]), int(xyxy[3] - xyxy[1])],
-                        conf,
-                        label,
-                    ])
+                    if any(math.isnan(v) or math.isinf(v) for v in xyxy):
+                        continue
+                    bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2] - xyxy[0]), int(xyxy[3] - xyxy[1])]
+                    dets.append([bbox, conf, label])
             try:
                 tracks = self.tracker.update_tracks(dets, frame=frame)
-            except ValueError as e:
+            except Exception as e:
                 logger.warning(f"tracker update error: {e}")
+                self.tracker = DeepSort(max_age=5)
                 continue
             now = time.time()
             active_ids = set()
@@ -577,6 +578,8 @@ class PersonTracker:
                             'ppe_tasks': ppe_tasks,
                         }
                         self.redis.zadd('person_logs', {json.dumps(entry): cross_ts})
+                        if ppe_tasks:
+                            self.redis.rpush('ppe_queue', json.dumps(entry))
                         limit = self.cfg.get('ppe_log_limit', 1000)
                         self.redis.zremrangebyrank('person_logs', 0, -limit-1)
 
