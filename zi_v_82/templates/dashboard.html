@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Z-Eye System Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,6 +11,11 @@
         html,body{height:100%;}
         .content-wrapper{min-height:100vh;overflow-y:auto;padding-bottom:4rem;}
         .stat-box{border-radius:.5rem;color:#fff;padding:0.8rem;margin-bottom:0.8rem;min-height:110px;display:flex;flex-direction:column;justify-content:center;}
+        .stats-container{display:flex;flex-wrap:wrap;justify-content:center;}
+        .stat-tile{flex:1 1 45%;margin:5px;min-width:140px;}
+        .camera-grid{display:flex;flex-wrap:wrap;justify-content:center;}
+        .camera-tile{flex:1 1 45%;padding:0 0.5rem;box-sizing:border-box;min-width:200px;}
+        .camera-tile .card{margin-bottom:1rem;}
         .stat-box h4{font-size:1.1rem;margin-bottom:.5rem;}
         .stat-box .display-6{font-size:2rem;}
         .feed-img{max-height:120px;object-fit:cover;}
@@ -19,6 +25,11 @@
         header img{height:40px;}
         footer{background:#f0f0f0;font-size:.9rem;}
         .dark-mode footer{background:#111;color:#fff;}
+        @media (max-width:768px){
+            .stat-tile{flex:1 1 100%;}
+            .camera-tile{flex:1 1 100%;padding:0;}
+            .feed-img{max-width:100%;height:auto;}
+        }
     </style>
 </head>
 <body>
@@ -26,21 +37,21 @@
 <div class="content-wrapper pt-5">
 <div class="container-fluid text-center mt-3 pb-5">
     {% if 'person' in cfg.track_objects %}
-    <div class="row g-3 justify-content-center mb-3">
-        <div class="col-md-3">
+    <div class="stats-container mb-3">
+        <div class="stat-tile">
             <div id="box-current" class="stat-box bg-success">
                 <h4>People Inside</h4>
                 <div class="display-6" id="current_count">{{group_counts.get('person', {}).get('current', 0)}}</div>
                 <div id="status_msg" class="fw-bold">{{status}}</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="stat-tile">
             <div class="stat-box bg-primary">
                 <h4>People Entered</h4>
                 <div class="display-6" id="in_count">{{group_counts.get('person', {}).get('in', 0)}}</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="stat-tile">
             <div class="stat-box bg-danger">
                 <h4>People Exited</h4>
                 <div class="display-6" id="out_count">{{group_counts.get('person', {}).get('out', 0)}}</div>
@@ -49,20 +60,20 @@
     </div>
     {% endif %}
     {% if 'vehicle' in cfg.track_objects %}
-    <div class="row g-3 justify-content-center mb-3">
-        <div class="col-md-3">
+    <div class="stats-container mb-3">
+        <div class="stat-tile">
             <div class="stat-box bg-success">
                 <h4>Vehicles Inside</h4>
                 <div class="display-4" id="vehicle_current">{{group_counts.get('vehicle', {}).get('current',0)}}</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="stat-tile">
             <div class="stat-box bg-primary">
                 <h4>Vehicles Entered</h4>
                 <div class="display-6" id="vehicle_in">{{group_counts.get('vehicle', {}).get('in',0)}}</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="stat-tile">
             <div class="stat-box bg-danger">
                 <h4>Vehicles Exited</h4>
                 <div class="display-6" id="vehicle_out">{{group_counts.get('vehicle', {}).get('out',0)}}</div>
@@ -70,7 +81,7 @@
         </div>
     </div>
     {% endif %}
-    <div class="row g-3 justify-content-center mb-4">
+    <div class="stats-container mb-4">
         {% set colors = {
             'no_helmet':'bg-danger',
             'no_safety_shoes':'bg-primary',
@@ -82,7 +93,7 @@
         } %}
         {% for item in cfg.alert_anomalies %}
         {% if item.startswith('no_') %}
-        <div class="col-md-3">
+        <div class="stat-tile">
             <div class="stat-box {{ colors.get(item,'bg-warning') }}" id="box-{{item}}" style="cursor:pointer">
                 <h4>{{item.replace('no_','No ').replace('_',' ')}}</h4>
                 <div class="display-6" id="{{item}}_count">{{anomaly_counts[item]}}</div>
@@ -93,10 +104,10 @@
     </div>
     <div class="row mb-4">
         <div class="col-md-8">
-            <div class="row" id="feeds">
+            <div id="feeds" class="camera-grid">
             {% for cam in cameras %}
-                <div class="col-md-6 mb-3">
-                    <div class="card">
+                <div class="camera-tile">
+                    <div class="card mb-3">
                       <div class="card-header">
                         {{cam.name}}
                       </div>
