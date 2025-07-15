@@ -7,6 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body{padding-top:70px;background:#f7f7f7;}
+        html,body{height:100%;}
+        .content-wrapper{min-height:100vh;overflow-y:auto;padding-bottom:4rem;}
         .stat-box{border-radius:.5rem;color:#fff;padding:0.8rem;margin-bottom:0.8rem;min-height:110px;display:flex;flex-direction:column;justify-content:center;}
         .stat-box h4{font-size:1.1rem;margin-bottom:.5rem;}
         .stat-box .display-6{font-size:2rem;}
@@ -21,7 +23,8 @@
 </head>
 <body>
 {% include 'partials/header.html' %}
-<div class="container-fluid text-center mt-3">
+<div class="content-wrapper pt-5">
+<div class="container-fluid text-center mt-3 pb-5">
     {% if 'person' in cfg.track_objects %}
     <div class="row g-3 justify-content-center mb-3">
         <div class="col-md-3">
@@ -201,6 +204,8 @@ async function loadPreview(){
 }
 setInterval(loadPreview,5000);loadPreview();
 </script>
+</div>
+</div>
 {% include 'partials/footer.html' %}
 </body>
 </html>

@@ -3,8 +3,13 @@
 <head>
     <title>Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
+    <style>
+    html,body{height:100%;}
+    .content-wrapper{min-height:100vh;overflow-y:auto;padding-bottom:4rem;}
+    </style>
 </head>
 <body class="p-4">
+<div class="content-wrapper">
 <div class="container" style="max-width:400px;">
     <h2 class="mb-3">Login</h2>
     {% if error %}<div class="alert alert-danger">{{error}}</div>{% endif %}
@@ -19,6 +24,7 @@
         </div>
         <button class="btn btn-primary" type="submit">Login</button>
     </form>
+</div>
 </div>
 </body>
 </html>
