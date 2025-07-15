@@ -25,6 +25,21 @@ def gather_stats(trackers: Dict[int, 'PersonTracker'], r: redis.Redis) -> dict:
 
 
 def broadcast_stats(trackers: Dict[int, 'PersonTracker'], r: redis.Redis) -> None:
-    """Publish the latest stats to listeners via Redis pub/sub."""
+    """Publish the latest stats via pub/sub and push to a Redis stream."""
     data = gather_stats(trackers, r)
-    r.publish('stats_updates', json.dumps(data))
+    payload = json.dumps(data)
+    r.publish('stats_updates', payload)
+    try:
+        r.xadd(
+            'people_counter',
+            {
+                'entered': data['people_entered'],
+                'exited': data['people_exited'],
+                'inside': data['people_in'],
+                'no_helmet': data['anomaly_counts'].get('no_helmet', 0),
+                'data': payload,
+            },
+            maxlen=100,
+        )
+    except Exception:
+        pass

@@ -13,5 +13,3 @@ python-multipart
 imagehash
 Pillow
 passlib
-pytest
-fakeredis
