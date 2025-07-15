@@ -16,7 +16,10 @@ class PPEDetector(threading.Thread):
         super().__init__(daemon=True)
         self.cfg = cfg
         self.redis = redis.Redis.from_url(redis_url)
-        self.model = YOLO(cfg.get("ppe_model", "mymodelv5.pt"))
+        model_path = Path(cfg.get("ppe_model", "mymodelv5.pt"))
+        if not model_path.is_absolute():
+            model_path = Path(__file__).resolve().parent.parent / model_path
+        self.model = YOLO(str(model_path))
         self.device = cfg.get("device", "cpu")
         if not self.device or self.device == "auto":
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
