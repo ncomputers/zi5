@@ -1,7 +1,7 @@
 {
   "stream_url": "http://localhost/zm/cgi-bin/nph-zms?mode=jpeg&monitor=20",
   "person_model": "yolov8n.pt",
-  "ppe_model": "mymodalv5.pt",
+  "ppe_model": "mymodelv5.pt",
   "device": "auto",
   "fps": 15,
   "skip_frames": 2,

@@ -16,14 +16,14 @@ class PPEDetector(threading.Thread):
         super().__init__(daemon=True)
         self.cfg = cfg
         self.redis = redis.Redis.from_url(redis_url)
-        self.model = YOLO(cfg.get("ppe_model", "mymodel.pt"))
+        self.model = YOLO(cfg.get("ppe_model", "mymodelv5.pt"))
         self.device = cfg.get("device", "cpu")
         if not self.device or self.device == "auto":
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         if self.device.startswith("cuda") and not torch.cuda.is_available():
             logger.warning("CUDA requested but not available, falling back to CPU")
             self.device = "cpu"
-        logger.info(f"Loading PPE model {cfg.get('ppe_model', 'mymodel.pt')} on {self.device}")
+        logger.info(f"Loading PPE model {cfg.get('ppe_model', 'mymodelv5.pt')} on {self.device}")
         if self.device.startswith("cuda"):
             self.model.model.to(self.device).half()
         else:
