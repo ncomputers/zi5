@@ -84,7 +84,7 @@ def load_config(path: str, r: redis.Redis) -> dict:
         data.setdefault("ppe_log_limit", 1000)
         data.setdefault("max_retry", 5)
         data.setdefault("person_model", "yolov8n.pt")
-        data.setdefault("ppe_model", "mymodalv5.pt")
+        data.setdefault("ppe_model", "mymodelv5.pt")
         data.setdefault("users", [
             {"username": "admin", "password": "rapidadmin", "role": "admin"},
             {"username": "viewer", "password": "viewer", "role": "viewer"}

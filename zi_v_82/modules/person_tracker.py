@@ -566,13 +566,15 @@ class PersonTracker:
                         fname = f"{self.cam_id}_{tid}_{direction.lower()}_{cross_ts}.jpg"
                         path = self.snap_dir / fname
                         cv2.imwrite(str(path), snap)
+                        ppe_tasks = self.tasks.get('ppe', [])
                         entry = {
                             'ts': cross_ts,
                             'cam_id': self.cam_id,
                             'track_id': tid,
                             'direction': direction,
                             'path': str(path),
-                            'needs_ppe': bool(self.tasks.get('ppe'))
+                            'needs_ppe': bool(ppe_tasks),
+                            'ppe_tasks': ppe_tasks,
                         }
                         self.redis.zadd('person_logs', {json.dumps(entry): cross_ts})
                         limit = self.cfg.get('ppe_log_limit', 1000)
