@@ -16,14 +16,14 @@ class PPEDetector(threading.Thread):
         super().__init__(daemon=True)
         self.cfg = cfg
         self.redis = redis.Redis.from_url(redis_url)
-        self.model = YOLO(cfg.get("ppe_model", "mymodel.pt"))
+        self.model = YOLO(cfg.get("ppe_model", "mymodelv5.pt"))
         self.device = cfg.get("device", "cpu")
         if not self.device or self.device == "auto":
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         if self.device.startswith("cuda") and not torch.cuda.is_available():
             logger.warning("CUDA requested but not available, falling back to CPU")
             self.device = "cpu"
-        logger.info(f"Loading PPE model {cfg.get('ppe_model', 'mymodel.pt')} on {self.device}")
+        logger.info(f"Loading PPE model {cfg.get('ppe_model', 'mymodelv5.pt')} on {self.device}")
         if self.device.startswith("cuda"):
             self.model.model.to(self.device).half()
         else:
@@ -41,7 +41,8 @@ class PPEDetector(threading.Thread):
             ]
             for entry in entries:
                 self.last_ts = max(self.last_ts, entry.get("ts", 0))
-                if not entry.get("needs_ppe"):
+                tasks = entry.get("ppe_tasks", self.cfg.get("track_ppe", []))
+                if not tasks:
                     continue
                 path = entry.get("path")
                 if not path:
@@ -58,7 +59,7 @@ class PPEDetector(threading.Thread):
                     label = self.model.names[int(cls)]
                     if conf > scores.get(label, 0):
                         scores[label] = conf
-                for item in self.cfg.get("track_ppe", []):
+                for item in tasks:
                     conf = scores.get(item, 0)
                     status = item if conf >= self.cfg.get("helmet_conf_thresh", 0.5) else f"no_{item}"
                     ts = int(time.time())
