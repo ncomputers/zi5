@@ -34,13 +34,10 @@ class AlertWorker:
 
     def _collect_rows(self, start_ts: int, end_ts: int, metric: str):
         """Return log rows matching the metric within the time window."""
-        entries = self.redis.lrange("ppe_logs", 0, -1)
+        entries = self.redis.zrangebyscore("ppe_logs", start_ts, end_ts)
         rows = []
         for item in entries:
             e = json.loads(item)
-            ts = e.get("ts")
-            if ts is None or ts <= start_ts or ts > end_ts:
-                continue
             if metric and e.get("status") != metric:
                 continue
             rows.append(e)

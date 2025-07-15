@@ -130,9 +130,10 @@ async def sse_stats():
 
 @router.get('/latest_images')
 async def latest_images(status: str = 'no_helmet', count: int = 5):
-    entries = redis.lrange('ppe_logs', -1000, -1)
-    imgs = []
-    for item in reversed(entries):
+    """Return paths of the most recent snapshots for the given status."""
+    entries = redis.zrevrange('ppe_logs', 0, 1000)
+    imgs: list[str] = []
+    for item in entries:
         e = json.loads(item)
         if e.get('status') == status and e.get('path'):
             fname = os.path.basename(e['path'])

@@ -10,6 +10,8 @@ from loguru import logger
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 import math
+import numpy as np
+
 import redis
 from pathlib import Path
 from .utils import send_email, lock, SNAP_DIR
@@ -48,6 +50,7 @@ class PersonTracker:
         self.duplicate_filter_threshold = cfg.get("duplicate_filter_threshold", 0.1)
         self.duplicate_bypass_seconds = cfg.get("duplicate_bypass_seconds", 2)
         self.max_retry = cfg.get("max_retry", 5)
+        self.unlock_dist = cfg.get("unlock_dist", 40)
         self.update_callback = update_callback
         self.online = False
         
@@ -258,7 +261,6 @@ class PersonTracker:
                             raw = cap.stdout.read(width * height * 3)
                             if len(raw) < width * height * 3:
                                 raise RuntimeError("ffmpeg_eof")
-                            import numpy as np
                             frame = np.frombuffer(raw, dtype="uint8").reshape(height, width, 3)
                         else:
                             ret, frame = cap.read()
@@ -345,7 +347,11 @@ class PersonTracker:
                         continue
                     bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2] - xyxy[0]), int(xyxy[3] - xyxy[1])]
                     dets.append([bbox, conf, label])
+            matrix = np.array([d[0] for d in dets], dtype=float)
+
             try:
+                if matrix.size > 0 and not np.isfinite(matrix).all():
+                    raise ValueError("matrix contains invalid numeric entries")
                 tracks = self.tracker.update_tracks(dets, frame=frame)
             except Exception as e:
                 logger.warning(f"tracker update error: {e}")
@@ -399,7 +405,21 @@ class PersonTracker:
                             imgs.append((conf, crop.copy()))
                 if label is not None:
                     prev['label'] = label
-                if zone != prev['zone'] and abs(cx - prev['cx']) > self.v_thresh and now - prev['time'] > self.debounce:
+
+                if prev.get('locked'):
+                    pos = cy if self.line_orientation == 'horizontal' else cx
+                    if abs(pos - prev.get('lock_pos', line_pos)) > self.unlock_dist or now - prev.get('cross_time', now) > 1:
+                        prev['locked'] = False
+                    else:
+                        prev['zone'], prev['cx'] = zone, cx
+                        prev['last_seen'] = now
+                        trail = prev.setdefault('trail', [])
+                        trail.append((cx, cy))
+                        if len(trail) > 20:
+                            trail.pop(0)
+                        continue
+
+                if zone != prev['zone'] and abs(cx - prev['cx']) > self.v_thresh and now - prev['time'] > self.debounce and not prev.get('locked'):
                     direction = None
                     if self.line_orientation == 'horizontal':
                         if prev['zone'] == 'top' and zone == 'bottom':
@@ -442,10 +462,12 @@ class PersonTracker:
                                 prev['last'] = direction
                                 prev['direction'] = direction
                                 prev['cross_time'] = now
+                                prev['locked'] = True
+                                prev['lock_pos'] = cy if self.line_orientation == 'horizontal' else cx
                                 logger.info(
                                     f"{direction} ID{tid} ({grp}) In={self.in_counts[grp]} Out={self.out_counts[grp]}"
                                 )
-                            elif prev['last'] != direction:
+                            elif prev['last'] != direction and not prev.get('locked'):
                                 if prev['last'] == 'Entering':
                                     self.in_counts[grp] = max(0, self.in_counts[grp]-1)
                                     self.in_count = max(0, self.in_count-1)
@@ -461,6 +483,8 @@ class PersonTracker:
                                 prev['last'] = None
                                 prev['direction'] = None
                                 prev['cross_time'] = None
+                                prev['locked'] = True
+                                prev['lock_pos'] = cy if self.line_orientation == 'horizontal' else cx
                                 logger.info(f"Reversed flow for ID{tid}")
                             prev['time'] = now
                 prev['zone'], prev['cx'] = zone, cx
