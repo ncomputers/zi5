@@ -1,4 +1,4 @@
-"""Crowd management system version 78."""
+"""Crowd management system version 82."""
 from __future__ import annotations
 
 import argparse

@@ -20,7 +20,6 @@ still available.
 - **Camera status**: Online/offline indicators appear in the Cameras page for quick troubleshooting.
 - **Secure logins**: User passwords are stored as PBKDF2 hashes and verified using passlib.
 - **Rotating log file**: `app.log` captures runtime logs with automatic rotation.
-- **Secure logins**: User passwords are stored as PBKDF2 hashes and verified using passlib.
 - **Historical reports**: A background task records per-minute counts to Redis so
   the reports page can graph occupancy over time. Log entries are stored in Redis
   sorted sets for efficient range queries.
