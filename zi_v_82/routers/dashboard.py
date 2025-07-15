@@ -80,43 +80,49 @@ async def video_feed(cam_id: int, request: Request):
 
 @router.websocket('/ws/stats')
 async def ws_stats(ws: WebSocket):
+    """WebSocket endpoint that streams stats using Redis Streams."""
     await ws.accept()
-    session = ws.session if hasattr(ws, 'session') else None
+    from core.stats import gather_stats
+    await ws.send_json(gather_stats(trackers_map, redis))
+    last_id = '$'
     try:
         while True:
-            groups = cfg.get('track_objects', ['person'])
-            group_counts = {}
-            for g in groups:
-                in_g = sum(t.in_counts.get(g, 0) for t in trackers_map.values())
-                out_g = sum(t.out_counts.get(g, 0) for t in trackers_map.values())
-                group_counts[g] = {'in': in_g, 'out': out_g, 'current': in_g - out_g}
-            in_c = group_counts.get('person', {'in':0})['in']
-            out_c = group_counts.get('person', {'out':0})['out']
-            current = group_counts.get('person', {'current':0})['current']
-            max_cap = cfg['max_capacity']
-            warn_lim = max_cap * cfg['warn_threshold'] / 100
-            status = 'green' if current < warn_lim else 'yellow' if current < max_cap else 'red'
-            handle_status_change(status, redis)
-            anomaly_counts = {item: int(redis.get(f'{item}_count') or 0) for item in ANOMALY_ITEMS}
-            await ws.send_json({'in_count': in_c, 'out_count': out_c, 'current': current, 'max_capacity': max_cap, 'status': status, 'anomaly_counts': anomaly_counts, 'group_counts': group_counts})
-            await asyncio.sleep(1)
+            res = await asyncio.to_thread(
+                redis.xread,
+                {'people_counter': last_id},
+                block=10000,
+                count=1,
+            )
+            if res:
+                _, messages = res[0]
+                for sid, fields in messages:
+                    last_id = sid.decode() if isinstance(sid, bytes) else sid
+                    data = fields.get(b'data') or fields.get('data')
+                    if data:
+                        await ws.send_text(data.decode() if isinstance(data, bytes) else data)
     except WebSocketDisconnect:
         pass
 
 @router.get('/sse/stats')
 async def sse_stats():
     async def event_gen():
-        pubsub = redis.pubsub()
-        pubsub.subscribe('stats_updates')
+        last_id = '$'
         try:
             while True:
-                msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=10)
-                if msg:
-                    data = msg['data'].decode()
-                    yield f"data: {data}\n\n"
-                await asyncio.sleep(0.5)
+                res = await asyncio.to_thread(
+                    redis.xread, {'people_counter': last_id}, block=10000, count=1
+                )
+                if res:
+                    _, messages = res[0]
+                    for sid, fields in messages:
+                        last_id = sid.decode() if isinstance(sid, bytes) else sid
+                        data = fields.get(b'data') or fields.get('data')
+                        if data:
+                            val = data.decode() if isinstance(data, bytes) else data
+                            yield f"data: {val}\n\n"
+                await asyncio.sleep(0)
         finally:
-            pubsub.close()
+            pass
     return StreamingResponse(event_gen(), media_type='text/event-stream')
 
 @router.get('/latest_images')
