@@ -6,6 +6,8 @@ from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from modules.utils import send_email, require_roles
+
+from modules.utils import send_email
 from core.config import ANOMALY_ITEMS, save_config
 from config import config
 

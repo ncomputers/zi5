@@ -1,6 +1,6 @@
-# Crowd Management System v83
+# Crowd Management System v82
 
-Version 83 separates the person counting and PPE detection logic into two
+Version 82 separates the person counting and PPE detection logic into two
 independent modules.  The basic **PersonTracker** detects and tracks people and
 logs entry/exit events to `person_logs`.  A new **PPEDetector** reads those log
 entries that require PPE checks and stores the results in `ppe_logs`.  Camera
@@ -20,6 +20,7 @@ still available.
 - **Camera status**: Online/offline indicators appear in the Cameras page for quick troubleshooting.
 - **Secure logins**: User passwords are stored as PBKDF2 hashes and verified using passlib.
 - **Rotating log file**: `app.log` captures runtime logs with automatic rotation.
+- **Secure logins**: User passwords are stored as PBKDF2 hashes and verified using passlib.
 - **Historical reports**: A background task records per-minute counts to Redis so
   the reports page can graph occupancy over time. Log entries are stored in Redis
   sorted sets for efficient range queries.

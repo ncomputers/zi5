@@ -59,11 +59,8 @@ class PersonTracker:
         if self.device.startswith("cuda") and not cuda_available:
             logger.warning("CUDA requested but not available, falling back to CPU")
             self.device = "cpu"
-        model_path = Path(self.person_model)
-        if not model_path.is_absolute():
-            model_path = Path(__file__).resolve().parent.parent / model_path
-        logger.info(f"Loading person model {model_path} on {self.device}")
-        self.model_person = YOLO(str(model_path))
+        logger.info(f"Loading person model {self.person_model} on {self.device}")
+        self.model_person = YOLO(self.person_model)
         self.email_cfg = cfg.get("email", {})
         if self.device.startswith("cuda"):
             self.model_person.model.to(self.device).half()
@@ -169,10 +166,7 @@ class PersonTracker:
                 self.dup_filter.bypass_seconds = self.duplicate_bypass_seconds
         if "person_model" in cfg and cfg["person_model"] != getattr(self, "person_model", None):
             self.person_model = cfg["person_model"]
-            model_path = Path(self.person_model)
-            if not model_path.is_absolute():
-                model_path = Path(__file__).resolve().parent.parent / model_path
-            self.model_person = YOLO(str(model_path))
+            self.model_person = YOLO(self.person_model)
             if self.device.startswith("cuda"):
                 self.model_person.model.to(self.device).half()
         if "email" in cfg:
@@ -572,15 +566,13 @@ class PersonTracker:
                         fname = f"{self.cam_id}_{tid}_{direction.lower()}_{cross_ts}.jpg"
                         path = self.snap_dir / fname
                         cv2.imwrite(str(path), snap)
-                        ppe_tasks = self.tasks.get('ppe', [])
                         entry = {
                             'ts': cross_ts,
                             'cam_id': self.cam_id,
                             'track_id': tid,
                             'direction': direction,
                             'path': str(path),
-                            'needs_ppe': bool(ppe_tasks),
-                            'ppe_tasks': ppe_tasks,
+                            'needs_ppe': bool(self.tasks.get('ppe'))
                         }
                         self.redis.zadd('person_logs', {json.dumps(entry): cross_ts})
                         limit = self.cfg.get('ppe_log_limit', 1000)
