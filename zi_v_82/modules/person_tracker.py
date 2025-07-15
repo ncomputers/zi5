@@ -577,6 +577,8 @@ class PersonTracker:
                             'ppe_tasks': ppe_tasks,
                         }
                         self.redis.zadd('person_logs', {json.dumps(entry): cross_ts})
+                        if ppe_tasks:
+                            self.redis.rpush('ppe_queue', json.dumps(entry))
                         limit = self.cfg.get('ppe_log_limit', 1000)
                         self.redis.zremrangebyrank('person_logs', 0, -limit-1)
 

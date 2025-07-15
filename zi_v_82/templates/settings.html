@@ -2,16 +2,20 @@
 <html>
 <head>
     <title>Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <style>
     .dark-mode{background:#222;color:#fff;}
+    html,body{height:100%;}
+    .content-wrapper{min-height:100vh;overflow-y:auto;padding-bottom:4rem;}
     </style>
 </head>
-<body class="pt-5">
+<body>
 {% include 'partials/header.html' %}
-<div class="container mt-4">
+<div class="content-wrapper pt-5">
+<div class="container mt-4 pb-5">
     <h1 class="mb-4">Settings</h1>
     <div id="msg"></div>
     <form id="cfgForm">
@@ -246,6 +250,8 @@ document.getElementById('importFile').addEventListener('change',async e=>{
   try{const data=JSON.parse(await file.text());const r=await fetch('/settings/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();document.getElementById('msg').innerHTML=d.saved?'<div class="alert alert-success">Imported</div>':'<div class="alert alert-danger">Error</div>';}catch(err){document.getElementById('msg').innerHTML='<div class="alert alert-danger">Invalid file</div>';}
 });
 </script>
+</div>
+</div>
 {% include 'partials/footer.html' %}
 </body>
 </html>
