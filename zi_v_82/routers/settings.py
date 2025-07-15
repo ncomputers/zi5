@@ -16,6 +16,7 @@ from core.tracker_manager import (
     stop_tracker,
     save_cameras,
 )
+from core.stats import broadcast_stats
 
 router = APIRouter()
 
@@ -119,9 +120,11 @@ async def import_settings(request: Request):
 @router.post('/reset')
 async def reset_endpoint():
     reset_counts(trackers_map)
+    broadcast_stats(trackers_map, redis)
     return {'reset': True}
 
 @router.post('/reset_nohelmet')
 async def reset_nohelmet_endpoint():
     reset_nohelmet(redis)
+    broadcast_stats(trackers_map, redis)
     return {'reset': True}

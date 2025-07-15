@@ -102,9 +102,17 @@ def reset_counts(trackers: Dict[int, PersonTracker]) -> None:
     for tr in trackers.values():
         tr.in_count = 0
         tr.out_count = 0
+        for g in tr.groups:
+            tr.in_counts[g] = 0
+            tr.out_counts[g] = 0
         tr.tracks.clear()
+        tr.tracker = DeepSort(max_age=5)
         tr.prev_date = date.today()
-        tr.redis.mset({tr.key_in: 0, tr.key_out: 0, tr.key_date: tr.prev_date.isoformat()})
+        data = {tr.key_date: tr.prev_date.isoformat()}
+        for g in tr.groups:
+            data[f"{tr.key_in}_{g}"] = 0
+            data[f"{tr.key_out}_{g}"] = 0
+        tr.redis.mset(data)
     logger.info("Counts reset")
 
 
