@@ -13,11 +13,14 @@
         .stat-box{border-radius:.5rem;color:#fff;padding:0.8rem;margin-bottom:0.8rem;min-height:110px;display:flex;flex-direction:column;justify-content:center;}
         .stats-container{display:flex;flex-wrap:wrap;justify-content:center;}
         .stat-tile{flex:1 1 45%;margin:5px;min-width:140px;}
+        .stat-full{flex:1 1 100%;}
+
         .camera-grid{display:flex;flex-wrap:wrap;justify-content:center;}
         .camera-tile{flex:1 1 45%;padding:0 0.5rem;box-sizing:border-box;min-width:200px;}
         .camera-tile .card{margin-bottom:1rem;}
         .stat-box h4{font-size:1.1rem;margin-bottom:.5rem;}
         .stat-box .display-6{font-size:2rem;}
+        .negative{color:#dc3545;}
         .feed-img{max-height:120px;object-fit:cover;}
         .dark-mode{background:#222;color:#fff;}
         .dark-mode .stat-box{color:#fff;}
@@ -39,13 +42,7 @@
     {% if 'person' in cfg.track_objects %}
     <div class="stats-container mb-3">
         <div class="stat-tile">
-            <div id="box-current" class="stat-box bg-success">
-                <h4>People Inside</h4>
-                <div class="display-6" id="current_count">{{group_counts.get('person', {}).get('current', 0)}}</div>
-                <div id="status_msg" class="fw-bold">{{status}}</div>
-            </div>
-        </div>
-        <div class="stat-tile">
+
             <div class="stat-box bg-primary">
                 <h4>People Entered</h4>
                 <div class="display-6" id="in_count">{{group_counts.get('person', {}).get('in', 0)}}</div>
@@ -55,6 +52,13 @@
             <div class="stat-box bg-danger">
                 <h4>People Exited</h4>
                 <div class="display-6" id="out_count">{{group_counts.get('person', {}).get('out', 0)}}</div>
+            </div>
+        </div>
+        <div class="stat-tile stat-full">
+            <div id="box-current" class="stat-box bg-success">
+                <h4>People Inside</h4>
+                <div class="display-6" id="current_count">{{group_counts.get('person', {}).get('current', 0)}}</div>
+                <div id="status_msg" class="fw-bold">{{status}}</div>
             </div>
         </div>
     </div>
@@ -166,7 +170,10 @@ ws.onmessage=e=>{
   const d=JSON.parse(e.data);
   document.getElementById('in_count').textContent=d.in_count;
   document.getElementById('out_count').textContent=d.out_count;
-  document.getElementById('current_count').textContent=d.current;
+  const curr=document.getElementById('current_count');
+  curr.textContent=d.current;
+  if(d.current<0){curr.classList.add('negative');}
+  else{curr.classList.remove('negative');}
   if(d.group_counts && d.group_counts.vehicle){
     const gv=d.group_counts.vehicle;
     const vin=document.getElementById('vehicle_in');
@@ -185,7 +192,11 @@ ws.onmessage=e=>{
   const box=document.getElementById('box-current');
   const msg=document.getElementById('status_msg');
   box.classList.remove('bg-success','bg-warning','bg-danger');
-  if(d.status==='green'){box.classList.add('bg-success');msg.textContent='Safe';}
+  if(d.current<0){
+    box.classList.add('bg-danger');
+    msg.textContent='Check';
+  }
+  else if(d.status==='green'){box.classList.add('bg-success');msg.textContent='Safe';}
   else if(d.status==='yellow'){box.classList.add('bg-warning');msg.textContent='Warning';}
   else{box.classList.add('bg-danger');msg.textContent='Full';}
   chart.options.scales.x.max=d.max_capacity;

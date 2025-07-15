@@ -80,18 +80,27 @@ async def video_feed(cam_id: int, request: Request):
 
 @router.websocket('/ws/stats')
 async def ws_stats(ws: WebSocket):
+    """WebSocket endpoint that streams stats using Redis Streams."""
     await ws.accept()
-    pubsub = redis.pubsub()
-    pubsub.subscribe('stats_updates')
     from core.stats import gather_stats
-    # send initial snapshot
     await ws.send_json(gather_stats(trackers_map, redis))
+    last_id = '$'
     try:
         while True:
-            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=10)
-            if msg:
-                await ws.send_text(msg['data'].decode())
-            await asyncio.sleep(0.5)
+            res = await asyncio.to_thread(
+                redis.xread,
+                {'people_counter': last_id},
+                block=10000,
+                count=1,
+            )
+            if res:
+                _, messages = res[0]
+                for sid, fields in messages:
+                    last_id = sid.decode() if isinstance(sid, bytes) else sid
+                    data = fields.get(b'data') or fields.get('data')
+                    if data:
+                        await ws.send_text(data.decode() if isinstance(data, bytes) else data)
+
     except WebSocketDisconnect:
         pass
     finally:
@@ -100,17 +109,23 @@ async def ws_stats(ws: WebSocket):
 @router.get('/sse/stats')
 async def sse_stats():
     async def event_gen():
-        pubsub = redis.pubsub()
-        pubsub.subscribe('stats_updates')
+        last_id = '$'
         try:
             while True:
-                msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=10)
-                if msg:
-                    data = msg['data'].decode()
-                    yield f"data: {data}\n\n"
-                await asyncio.sleep(0.5)
+                res = await asyncio.to_thread(
+                    redis.xread, {'people_counter': last_id}, block=10000, count=1
+                )
+                if res:
+                    _, messages = res[0]
+                    for sid, fields in messages:
+                        last_id = sid.decode() if isinstance(sid, bytes) else sid
+                        data = fields.get(b'data') or fields.get('data')
+                        if data:
+                            val = data.decode() if isinstance(data, bytes) else data
+                            yield f"data: {val}\n\n"
+                await asyncio.sleep(0)
         finally:
-            pubsub.close()
+            pass
     return StreamingResponse(event_gen(), media_type='text/event-stream')
 
 @router.get('/latest_images')

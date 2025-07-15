@@ -16,7 +16,8 @@ still available.
 - **Duplicate frame filter**: Skips nearly identical frames to reduce GPU/CPU load.
 - **Dashboard and reports**: Live counts, recent anomalies, and historical reports are available in the web interface.
 - **Per-camera resolution**: Choose 480p, 720p, 1080p, or original when adding a camera.
-- **Real-time updates via WebSocket**: Dashboard values refresh automatically without manual reload.
+- **Real-time updates via WebSocket/Redis Streams**: Dashboard values refresh automatically without manual reload.
+
 - **Camera status**: Online/offline indicators appear in the Cameras page for quick troubleshooting.
 - **Secure logins**: User passwords are stored as PBKDF2 hashes and verified using passlib.
 - **Rotating log file**: `app.log` captures runtime logs with automatic rotation.
