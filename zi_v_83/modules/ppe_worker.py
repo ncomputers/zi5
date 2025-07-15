@@ -41,7 +41,8 @@ class PPEDetector(threading.Thread):
             ]
             for entry in entries:
                 self.last_ts = max(self.last_ts, entry.get("ts", 0))
-                if not entry.get("needs_ppe"):
+                tasks = entry.get("ppe_tasks") or self.cfg.get("track_ppe", [])
+                if not entry.get("needs_ppe") or not tasks:
                     continue
                 path = entry.get("path")
                 if not path:
@@ -58,7 +59,7 @@ class PPEDetector(threading.Thread):
                     label = self.model.names[int(cls)]
                     if conf > scores.get(label, 0):
                         scores[label] = conf
-                for item in self.cfg.get("track_ppe", []):
+                for item in tasks:
                     conf = scores.get(item, 0)
                     status = item if conf >= self.cfg.get("helmet_conf_thresh", 0.5) else f"no_{item}"
                     ts = int(time.time())

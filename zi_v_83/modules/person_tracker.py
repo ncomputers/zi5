@@ -572,7 +572,8 @@ class PersonTracker:
                             'track_id': tid,
                             'direction': direction,
                             'path': str(path),
-                            'needs_ppe': bool(self.tasks.get('ppe'))
+                            'needs_ppe': bool(self.tasks.get('ppe')),
+                            'ppe_tasks': self.tasks.get('ppe', [])
                         }
                         self.redis.zadd('person_logs', {json.dumps(entry): cross_ts})
                         limit = self.cfg.get('ppe_log_limit', 1000)
