@@ -1,6 +1,6 @@
-# Crowd Management System v82
+# Crowd Management System v83
 
-Version 82 separates the person counting and PPE detection logic into two
+Version 83 separates the person counting and PPE detection logic into two
 independent modules.  The basic **PersonTracker** detects and tracks people and
 logs entry/exit events to `person_logs`.  A new **PPEDetector** reads those log
 entries that require PPE checks and stores the results in `ppe_logs`.  Camera
